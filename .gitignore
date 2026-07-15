@@ -1,0 +1,6 @@
+node_modules/
+dist_exe/
+dist_final/
+.temp_build/
+AIVideoFactory_Workspace/
+*.env

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; media-src 'self' file: blob: data:; img-src 'self' data:;">
+    <title>AI Video Factory - Ultra Pro</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="app">
+    <div id="view-home" class="active">
+        <div class="flex items-center justify-between mb-20">
+            <h2 style="font-size: 2.2rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800;"><i class="fa-solid fa-bolt"></i> AI VIDEO FACTORY PRO</h2>
+            <div class="flex gap-10">
+                <button class="btn btn-primary" id="btnHomeProjects" onclick="switchHomeTab('projects')"><i class="fa-solid fa-folder-open"></i> Quản Lý Dự Án</button>
+                <button class="btn btn-secondary" id="btnHomeDashboard" onclick="switchHomeTab('dashboard')"><i class="fa-solid fa-chart-pie"></i> Trung Tâm Tài Chính Tổng</button>
+                <div style="width:1px; background:var(--border); margin:0 5px"></div>
+                <button class="btn btn-secondary" onclick="document.getElementById('modalSettings').style.display='flex'"><i class="fa-solid fa-gear"></i> Cài Đặt Chung</button>
+            </div>
+        </div>
+        
+        <div id="home-pane-projects" class="home-pane">
+            <div class="project-grid" id="projectGrid"></div>
+        </div>
+
+        <div id="home-pane-dashboard" class="home-pane" style="display: none; flex-direction: column; gap: 20px; padding-bottom: 40px; height: calc(100vh - 120px); overflow-y: auto; padding-right: 10px;">
+            <div id="globalDashboardLoading" style="display:none; justify-content:center; align-items:center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin text-primary" style="font-size:2rem"></i></div>
+            
+            <div class="finance-grid">
+                <div class="stat-card">
+                    <h4>Tổng Tiêu Hao Hệ Thống</h4>
+                    <div class="val text-danger" id="globalTotalCost">0 đ</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Dự Án Ngốn Chi Phí Nhất</h4>
+                    <div class="val text-primary" id="globalTopCostProj" style="font-size:1.3rem; margin-top:10px; word-break: break-word;">---</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Dự Án Nhiều Video Nhất</h4>
+                    <div class="val text-success" id="globalTopVideoProj" style="font-size:1.3rem; margin-top:10px; word-break: break-word;">---</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Kịch Bản Chờ Render</h4>
+                    <div class="val text-warning" id="globalPendingScripts">0 <span style="font-size: 1rem">kịch bản</span></div>
+                </div>
+            </div>
+
+            <div class="flex gap-20">
+                <div class="chart-container" style="flex: 1">
+                    <canvas id="globalCostByServiceChart"></canvas>
+                </div>
+                <div class="chart-container" style="flex: 2">
+                    <canvas id="globalCostByDateChart"></canvas>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px;">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary"><i class="fa-solid fa-list-ul"></i> Lịch sử truy vấn toàn hệ thống</h3>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="loadGlobalDashboard()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                </div>
+                <div style="max-height: 400px; overflow-y:auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Dự án</th>
+                                <th>Dịch vụ</th>
+                                <th>Tác vụ</th>
+                                <th>Tiêu thụ</th>
+                                <th style="text-align:right">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalFinTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-workspace">
+        <div class="ws-header">
+            <div class="flex items-center gap-10">
+                <i class="fa-solid fa-folder-open text-primary" style="font-size: 1.5rem"></i> 
+                <span id="lblProjectName" class="text-main" style="font-weight: 700; font-size: 1.2rem; letter-spacing: 0.5px">---</span>
+            </div>
+            
+            <div id="headerProgressBlock" class="flex items-center gap-10" style="display:none !important">
+                <span class="text-success font-bold text-sm">Tiến trình Tổng:</span>
+                <div class="global-progress-bar"><div id="headerProgressFill" class="global-progress-fill"></div></div>
+                <span id="headerProgressText" class="text-white font-bold">0%</span>
+                <div style="width:1px; height:15px; background:var(--border); margin:0 5px"></div>
+                <span id="headerSessionCost" class="text-danger font-bold"><i class="fa-solid fa-fire"></i> 0 đ</span>
+            </div>
+
+            <div class="flex items-center gap-10">
+                <button class="btn btn-danger" id="btnStopProcess" style="display:none; font-weight:bold; padding: 6px 15px; box-shadow: 0 0 10px rgba(239,68,68,0.4)" onclick="stopProcess()"><i class="fa-solid fa-hand"></i> DỪNG LẠI</button>
+                <button class="btn btn-ai" id="btnAutoMode" style="padding: 6px 15px;" onclick="openAutoModal()"><i class="fa-solid fa-robot"></i> Sản Xuất Dây Chuyền</button>
+                <div style="width:1px; height:20px; background:var(--border); margin:0 5px"></div>
+                <button class="btn btn-secondary" id="btnThoat" style="padding: 6px 12px"><i class="fa-solid fa-arrow-right-from-bracket"></i> Đóng Dự Án</button>
+            </div>
+        </div>
+
+        <div class="ws-tabs">
+            <button class="tab-btn active" onclick="switchTab('workspace')"><i class="fa-solid fa-clapperboard"></i> 🎬 Xưởng Sản Xuất</button>
+            <button class="tab-btn" onclick="switchTab('finance')"><i class="fa-solid fa-chart-pie"></i> 💰 Chi Phí Dự Án Hiện Tại</button>
+        </div>
+
+        <div id="tab-workspace" class="tab-pane active">
+            <div class="ws-body">
+                <div class="left-panel" id="wsLeftPanel">
+                    
+                    <div class="quadrant" id="q1" onclick="if(!event.target.closest('button, input, select, textarea, .click-to-edit, .fa-solid, .status-badge, .source-thumb')) openExpanded('q1', 'Nhập & Tải Nguồn', 'Danh sách Nguồn')">
+                        <div class="q-header" style="cursor: default;" onclick="event.stopPropagation()">
+                            <span><i class="fa-solid fa-video"></i> 1. Resource & Cắt Cảnh <span id="prog-scan" class="text-warning" style="display:none; font-size:13px; margin-left:10px;"></span></span>
+                            <button class="btn btn-secondary" style="padding:2px 8px; font-size:10px" onclick="toggleCollapse('q1-inputs', this)"><i class="fa-solid fa-chevron-up"></i></button>
+                        </div>
+                        <div class="q-content flex flex-col" id="q1Content" style="padding: 0; cursor: default;">
+                            
+                            <div id="q1-inputs" style="padding: 15px;">
+                                <div style="background:rgba(15,23,42,0.4); padding:15px; border-radius:8px; border:1px solid var(--border); margin-bottom:15px">
+                                    <div class="w-full mb-10"><label class="text-muted text-sm">Tên Sản phẩm:</label>
+                                    <input type="text" id="piName" class="form-control click-to-edit" placeholder="Click để nhập Tên SP..." readonly onclick="openBigInput('Tên Sản phẩm', this.id)" onchange="saveProductInfo()"></div>
+                                    <div class="w-full"><label class="text-muted text-sm">Công dụng cốt lõi:</label>
+                                    <input type="text" id="piDesc" class="form-control click-to-edit" placeholder="Click để mô tả chi tiết công dụng..." readonly onclick="openBigInput('Công dụng cốt lõi', this.id)" onchange="saveProductInfo()"></div>
+                                </div>
+                                
+                                <div class="w-full mb-15 p-10" style="background:rgba(99,102,241,0.1); border-radius:8px; border:1px solid rgba(99,102,241,0.3)">
+                                    <div class="flex justify-between items-center mb-5">
+                                        <label class="text-muted text-sm" title="Giúp AI học thuộc hình dáng sản phẩm để soi Video chuẩn xác hơn"><i class="fa-solid fa-images text-primary"></i> <b>Cung cấp Ảnh mẫu sản phẩm:</b></label>
+                                        <button class="btn btn-primary" id="btnUploadImages" style="padding: 4px 10px; font-size:11px"><i class="fa-solid fa-plus"></i> Up Ảnh Nhận Diện</button>
+                                    </div>
+                                    <div id="productImagesList" class="flex gap-10 overflow-x-auto" style="min-height: 55px; align-items: center; padding-bottom: 5px;">
+                                        <span class="text-muted text-xs" style="margin:auto">Chưa có ảnh mẫu nào. Bấm nút (+) để thêm.</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-10 items-center mb-10">
+                                    <input type="text" id="ytLink" class="form-control click-to-edit flex-1" placeholder="Click dán link YT/TikTok tải video..." readonly style="margin:0" onclick="openBigInput('Tải Video bằng Link', this.id)">
+                                    <button class="btn btn-ai" id="btnDownloadYT" title="Tải bằng yt-dlp"><i class="fa-solid fa-cloud-arrow-down"></i> Tải & Quét</button>
+                                </div>
+                                
+                                <div class="flex gap-10 items-center mb-10">
+                                    <button class="btn btn-primary flex-1" id="btnUpload"><i class="fa-solid fa-upload"></i> Up File Local</button>
+                                    <button class="btn btn-ai flex-1" id="btnScanAll"><i class="fa-solid fa-wand-magic-sparkles"></i> Quét Tất Cả Chờ AI</button>
+                                </div>
+
+                                <div class="flex items-center gap-10 p-10" style="background: rgba(15, 23, 42, 0.4); border-radius:8px; border: 1px solid var(--border)">
+                                    <div style="flex:1;"></div>
+                                    <label class="text-muted text-sm">Mượt (FPS):</label>
+                                    <input type="range" id="fpsSlider" min="1" max="15" value="15" style="width: 80px; accent-color: var(--primary);">
+                                    <span id="fpsVal" class="text-primary font-bold">15</span>
+                                </div>
+                            </div>
+
+                            <div id="q1-list" style="flex:1; overflow-y:auto; border-top: 1px dashed var(--border-light); padding: 15px;">
+                                <!-- Bảng AI Audit nằm ở đây -->
+                                <div id="resourceAuditPanel" class="mb-15" style="display:none"></div>
+                                
+                                <div id="sourceList"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="quadrant" id="q2" onclick="if(!event.target.closest('button, input, select, textarea, .click-to-edit, .fa-solid, .status-badge')) openExpanded('q2', 'Cài đặt Tạo Kịch Bản', 'Danh sách Kịch bản Đã Tạo')">
+                        <div class="q-header" style="cursor: default;" onclick="event.stopPropagation()">
+                            <span><i class="fa-solid fa-robot"></i> 2. Gen Kịch Bản Sáng Tạo <span id="prog-script" class="text-warning" style="display:none; font-size:13px; margin-left:10px;"></span></span>
+                            <button class="btn btn-secondary" style="padding:2px 8px; font-size:10px" onclick="toggleCollapse('scriptControls', this)"><i class="fa-solid fa-chevron-up"></i></button>
+                        </div>
+                        <div class="q-content flex flex-col" id="q2Content" style="padding: 0; cursor: default;">
+                            
+                            <div id="scriptControls" style="padding: 15px;">
+                                <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); padding:10px; border-radius:8px; margin-bottom:15px">
+                                    <div class="flex justify-between items-center mb-5">
+                                        <label class="text-primary font-bold text-sm"><i class="fa-solid fa-book"></i> Thư viện Prompt Kịch Bản</label>
+                                        <button class="btn btn-secondary" onclick="openPromptManager()" style="padding: 4px 10px; font-size:11px" title="Quản lý Thư viện Prompt"><i class="fa-solid fa-list-check"></i> Quản lý Prompt</button>
+                                    </div>
+                                    <select id="mainPromptSelect" class="form-control mb-5" onchange="previewSelectedPrompt()">
+                                        <option value="">-- Chọn 1 mẫu Prompt định hướng --</option>
+                                    </select>
+                                    <textarea id="mainPromptPreview" class="form-control text-muted click-to-edit" rows="3" style="background:rgba(0,0,0,0.2); font-size:12px; resize:none" readonly placeholder="Nội dung prompt sẽ hiển thị ở đây để bạn kiểm tra..." onclick="openBigInput('Xem Nội dung Prompt', this.id)"></textarea>
+                                </div>
+                                
+                                <div class="flex gap-10">
+                                    <div style="flex:0.5"><label class="text-muted text-sm">Số lượng:</label><input type="number" id="scriptCount" class="form-control" value="5"></div>
+                                    <div class="flex-1"><label class="text-muted text-sm">Độ dài:</label><select id="scriptDur" class="form-control"><option value="30s">30s</option><option value="60s" selected>60s</option></select></div>
+                                    <button id="btnGenScriptBatch" class="btn btn-ai" style="align-self: flex-end; padding: 10px 15px; width: 140px"><i class="fa-solid fa-bolt"></i> TẠO MỚI</button>
+                                </div>
+                            </div>
+                            
+                            <div id="scriptListUI" style="flex:1; overflow-y:auto; border-top: 1px dashed var(--border-light); padding: 15px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="quadrant" id="q3">
+                        <div class="q-header">
+                            <span><i class="fa-solid fa-microphone-lines"></i> 3. Lồng Tiếng <span id="prog-voice" class="text-warning" style="display:none; font-size:13px; margin-left:10px;"></span></span>
+                            <div class="flex gap-10">
+                                <button class="btn btn-primary" id="btnPreviewVoice" style="padding: 4px 10px; font-size:12px"><i class="fa-solid fa-play"></i> Nghe</button>
+                                <button class="btn" id="btnReloadVoice" style="padding: 4px 10px; font-size:12px"><i class="fa-solid fa-rotate"></i> Load (Lar)</button>
+                            </div>
+                        </div>
+                        <div class="q-content">
+                            <label class="text-muted text-sm">Nguồn TTS:</label>
+                            <select id="voiceProvider" class="form-control mb-10" onchange="toggleVoiceProviderUI()">
+                                <option value="larvoice">LarVoice (Mặc định)</option>
+                                <option value="everai">EverAI</option>
+                            </select>
+
+                            <div id="larvoiceGroup">
+                                <select id="voiceModel" class="form-control mb-15"><option value="">Bấm Load để lấy giọng...</option></select>
+                            </div>
+
+                            <div id="everaiGroup" style="display:none; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px solid var(--border)" class="mb-15">
+                                <select id="everaiVoiceModel" class="form-control mb-10">
+                                    <option value="vi_female_kieunhi_mn">Kiều Nhi (Nữ - Miền Nam)</option>
+                                    <option value="vi_male_lehoang_mb">Lê Hoàng (Nam - Miền Bắc)</option>
+                                </select>
+                                <div class="flex gap-10 mt-5">
+                                    <input type="text" id="evName" class="form-control flex-1" placeholder="Tên gợi nhớ..." style="margin:0; font-size:11px">
+                                    <input type="text" id="evCode" class="form-control flex-1" placeholder="Mã ID (voice_code)..." style="margin:0; font-size:11px">
+                                    <button class="btn btn-secondary" onclick="addEverAIVoice()" style="padding:4px 8px; font-size:11px"><i class="fa-solid fa-plus"></i> Lưu</button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-10 mb-15">
+                                <div class="flex-1"><label class="text-muted text-sm">Speed:</label><input type="number" id="vSpeed" class="form-control" value="1.1" step="0.1"></div>
+                                <div class="flex-1"><label class="text-muted text-sm">Pitch:</label><input type="number" id="vPitch" class="form-control" value="1" step="0.1"></div>
+                                <div class="flex-1"><label class="text-muted text-sm">Vol:</label><input type="number" id="vVol" class="form-control" value="0" step="0.1"></div>
+                            </div>
+
+                            <div class="text-muted text-sm mb-10 text-center">Công cụ sẽ TỰ ĐỘNG lồng tiếng cho TẤT CẢ kịch bản chưa có Voice ở Ô 2.</div>
+                            <button id="btnGenVoiceBatch" class="btn btn-ai w-full" style="padding:12px"><i class="fa-solid fa-wand-magic-sparkles"></i> LỒNG TIẾNG TOÀN BỘ KỊCH BẢN</button>
+                            
+                            <div class="mt-15 p-15 flex items-center justify-between" style="background:rgba(16,185,129,0.1); border-radius:8px">
+                                <div class="text-muted text-sm">Sẵn sàng xuất:</div>
+                                <div class="text-success" style="font-size: 1.5rem; font-weight:bold" id="statReady">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quadrant" id="q4">
+                        <div class="q-header"><span><i class="fa-solid fa-terminal"></i> 4. System Terminal Log</span></div>
+                        <div class="terminal-box" id="terminalLog">
+                            <div style="color:#666">-- System Ready. Đang chờ lệnh... --</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="q-header" style="background: transparent; border-bottom: 2px solid var(--primary); padding: 5px 0 15px 0">
+                        <span style="font-size: 1.2rem"><i class="fa-solid fa-rocket text-primary"></i> RENDER ĐA LUỒNG <span id="prog-render" class="text-warning" style="display:none; font-size:14px; margin-left:10px;"></span></span>
+                        <button class="btn btn-secondary" style="padding:2px 8px; font-size:10px" onclick="toggleCollapse('renderControls', this)"><i class="fa-solid fa-chevron-up"></i></button>
+                    </div>
+                    
+                    <div class="q-content" style="padding: 15px 0; display:flex; flex-direction:column; gap:15px;">
+                        
+                        <div id="renderControls" class="collapsible-content" style="max-height: 800px; display:flex; flex-direction:column; gap:15px;">
+                            <div style="background:var(--bg-body); padding:15px; border-radius:8px; border:1px solid var(--border);">
+                                <h4 class="text-primary mb-10"><i class="fa-solid fa-folder-tree"></i> Thư mục xuất Video</h4>
+                                <div class="flex gap-10">
+                                    <input type="text" id="outPathDisplay" class="form-control flex-1" placeholder="Mặc định: 07_Product" readonly style="margin:0; font-size:11px">
+                                    <button class="btn btn-secondary" onclick="chooseOutputFolder('outPathDisplay')" style="padding:6px 10px; font-size:12px" title="Đổi thư mục xuất"><i class="fa-solid fa-folder-open"></i> Đổi</button>
+                                    <button class="btn btn-secondary" onclick="openOutputFolder('outPathDisplay')" style="padding:6px 10px; font-size:12px" title="Mở thư mục này"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở</button>
+                                </div>
+                            </div>
+
+                            <div style="background:var(--bg-body); padding:15px; border-radius:8px; border:1px solid var(--border);">
+                                <div class="flex items-center justify-between mb-10">
+                                    <label class="text-muted font-bold">Chế độ Render (Siêu Tốc):</label>
+                                    <select id="renderEngine" class="form-control" style="width:160px; margin:0; font-weight:bold; color:var(--success)">
+                                        <option value="gpu">🚀 Tự động dùng GPU</option>
+                                        <option value="cpu">🐌 Chỉ dùng CPU</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex items-center justify-between mb-10">
+                                    <label class="text-muted font-bold">Song song (Max Concurrent):</label>
+                                    <input type="number" id="maxConcurrent" class="form-control" value="3" min="1" max="5" style="width:70px; margin:0; text-align:center; font-weight:bold; color:var(--primary)">
+                                </div>
+
+                                <hr style="border:0; border-top:1px dashed var(--border-light); margin:15px 0">
+                                <h4 class="text-primary mb-10"><i class="fa-solid fa-language"></i> Cấu hình Subtitle</h4>
+
+                                <div class="flex gap-10 mb-10">
+                                    <div class="flex-1">
+                                        <label class="text-muted text-sm">Font chữ:</label>
+                                        <input type="text" id="subFont" class="form-control" list="sysFonts" value="Arial" placeholder="Gõ tên Font...">
+                                        <datalist id="sysFonts"></datalist>
+                                    </div>
+                                    <div style="width:60px"><label class="text-muted text-sm">Size:</label><input type="number" id="subSize" class="form-control" value="24"></div>
+                                </div>
+                                
+                                <div class="flex gap-10 mb-15">
+                                    <div class="flex-1"><label class="text-muted text-sm">Màu chữ thường:</label><input type="color" id="subC" value="#FFFFFF" class="form-control" style="padding:0; height:32px; cursor:pointer"></div>
+                                    <div class="flex-1"><label class="text-muted text-sm">Màu viền sub:</label><input type="color" id="subB" value="#000000" class="form-control" style="padding:0; height:32px; cursor:pointer"></div>
+                                    <div style="width:60px"><label class="text-muted text-sm">Cỡ viền:</label><input type="number" id="subBorderSize" class="form-control" value="2" min="0" max="10"></div>
+                                </div>
+                                
+                                <div class="mb-10 p-10" style="background:rgba(15,23,42,0.5); border-radius:8px; border:1px solid var(--border-light)">
+                                    <label class="text-muted text-sm mb-5" style="display:block">Âm thanh Chuyển cảnh (Ting/Whoosh):</label>
+                                    <div class="flex gap-10">
+                                        <input type="text" id="soundEfPath" class="form-control flex-1" placeholder="Chưa chọn file..." readonly style="margin:0; font-size:11px">
+                                        <button class="btn btn-secondary" onclick="chooseSoundFile('soundEfPath')" style="padding:6px 10px; font-size:12px"><i class="fa-solid fa-music"></i> Chọn</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-15 p-10" style="background:rgba(15,23,42,0.5); border-radius:8px; border:1px solid var(--border-light)">
+                                    <label class="text-muted text-sm mb-5" style="display:block">Âm thanh Keyword (Ting/Pop):</label>
+                                    <div class="flex gap-10">
+                                        <input type="text" id="keywordSoundPath" class="form-control flex-1" placeholder="Chưa chọn file..." readonly style="margin:0; font-size:11px">
+                                        <button class="btn btn-secondary" onclick="chooseSoundFile('keywordSoundPath')" style="padding:6px 10px; font-size:12px"><i class="fa-solid fa-music"></i> Chọn</button>
+                                    </div>
+                                </div>
+                                
+                                <label class="flex items-center gap-10 mt-15 p-10" style="cursor:pointer; background:rgba(245,158,11,0.1); border-radius:6px; border:1px solid rgba(245,158,11,0.2)">
+                                    <input type="checkbox" id="cbNoPunc" checked style="width:16px; height:16px; accent-color:var(--warning)"> 
+                                    <span class="text-warning text-sm">Xóa Dấu Câu Subtitle</span>
+                                </label>
+
+                                <button id="btnRenderBatch" class="btn btn-success w-full mt-15" style="padding:14px; font-size:1.1rem; box-shadow: 0 4px 15px rgba(16,185,129,0.3);"><i class="fa-solid fa-play"></i> BẮT ĐẦU XUẤT THỦ CÔNG</button>
+                            </div>
+                        </div>
+
+                        <div style="flex:1; overflow-y:auto" id="finalList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-finance" class="tab-pane">
+            <div class="finance-grid">
+                <div class="stat-card">
+                    <h4>Chi Phí Dự Án Hiện Tại</h4>
+                    <div class="val text-danger" id="finTotalCost">0 đ</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Lượt Gọi AI</h4>
+                    <div class="val text-primary" id="finTotalCalls">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Video Đã Xuất</h4>
+                    <div class="val text-success" id="finTotalVideos">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Trung Bình 1 Video</h4>
+                    <div class="val text-warning" id="finAvgCost">0 đ</div>
+                </div>
+            </div>
+
+            <div class="flex gap-20 mb-20">
+                <div class="chart-container" style="flex: 1">
+                    <canvas id="costByServiceChart"></canvas>
+                </div>
+                <div class="chart-container" style="flex: 2">
+                    <canvas id="costByDateChart"></canvas>
+                </div>
+            </div>
+
+            <div style="background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; flex:1; display:flex; flex-direction:column; overflow:hidden">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary"><i class="fa-solid fa-list-ul"></i> Lịch sử truy vấn chi tiết</h3>
+                    <button class="btn btn-secondary" style="padding: 6px 12px" onclick="loadFinanceData()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+                </div>
+                <div style="overflow-y:auto; flex:1">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Dự án</th>
+                                <th>Dịch vụ</th>
+                                <th>Tác vụ</th>
+                                <th>Tiêu thụ</th>
+                                <th style="text-align:right">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="finTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalBigInput" class="modal" onclick="if(event.target===this) saveBigInput()" style="z-index: 1050;">
+        <div class="modal-content flex flex-col" style="padding: 25px; width: 750px; max-width: 95vw; height: 65vh; border: 2px solid var(--primary); box-shadow: 0 0 30px rgba(99,102,241,0.4);">
+            <h3 id="bigInputTitle" style="color:var(--primary); font-size: 1.3rem" class="mb-15"><i class="fa-solid fa-pen-to-square"></i> Soạn thảo</h3>
+            <textarea id="bigInputArea" class="form-control flex-1 mb-15" style="resize:none; font-size: 15px; line-height: 1.6;"></textarea>
+            <div class="flex gap-10">
+                <button class="btn btn-success flex-1" onclick="saveBigInput()" style="font-size:1.1rem"><i class="fa-solid fa-check"></i> Lưu Lại (Click ra ngoài cũng sẽ tự lưu)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalExpanded" class="modal" onclick="if(event.target===this) closeExpanded()">
+        <div class="modal-content" style="width: 1200px; max-width: 95vw; height: 85vh; display: flex; flex-direction: row; padding: 0; background: var(--bg-body);">
+            <div id="expandedLeft" style="flex: 1; padding: 20px; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column;">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary" id="expandedTitleLeft"></h3>
+                </div>
+                <div id="expandedLeftBody" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+            <div id="expandedRight" style="flex: 1.5; padding: 20px; background: var(--bg-panel); overflow-y: auto; display: flex; flex-direction: column;">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary" id="expandedTitleRight"></h3>
+                    <button class="btn btn-danger" onclick="closeExpanded()"><i class="fa-solid fa-xmark"></i> Thu Nhỏ</button>
+                </div>
+                <div id="expandedRightBody" style="flex:1; display:flex; flex-direction:column; overflow:hidden;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PROMPT MANAGER -->
+    <div id="modalPromptManager" class="modal" onclick="if(event.target===this) closePromptManager()">
+        <div class="modal-content" style="width: 1100px; max-width: 95vw; height: 80vh; display: flex; flex-direction: row; padding: 0; border: 1px solid var(--border);">
+            <div style="flex: 1; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg-panel);">
+                <div class="q-header flex justify-between">
+                    <span><i class="fa-solid fa-book-open"></i> Thư viện Prompt</span>
+                    <button class="btn btn-danger" onclick="closePromptManager()" style="padding:2px 8px; font-size:12px"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="padding:15px; border-bottom:1px solid var(--border)">
+                    <button class="btn btn-primary w-full" onclick="createNewPrompt()"><i class="fa-solid fa-plus"></i> Tạo Prompt Mới</button>
+                </div>
+                <div id="promptListArea" style="flex:1; overflow-y:auto; padding: 15px;"></div>
+            </div>
+            <div style="flex: 2; display: flex; flex-direction: column; background: var(--bg-body); padding: 20px; overflow-y:auto; min-width:500px;">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary"><i class="fa-solid fa-pen-nib"></i> Soạn thảo Prompt</h3>
+                    <button class="btn btn-danger" onclick="closePromptManager()"><i class="fa-solid fa-xmark"></i> Đóng</button>
+                </div>
+                
+                <input type="hidden" id="editPromptId">
+                <label class="text-muted text-sm">Tên gợi nhớ (Tiêu đề):</label>
+                <input type="text" id="editPromptName" class="form-control mb-15">
+                
+                <label class="text-muted text-sm">Nội dung Prompt điều hướng AI (Văn phong, Cấu trúc, Cách dẫn dắt):</label>
+                <textarea id="editPromptContent" class="form-control mb-15" rows="12" style="resize:vertical"></textarea>
+                
+                <div class="flex gap-10">
+                    <button class="btn btn-success flex-1" id="btnSavePrompt" onclick="saveEditedPrompt()"><i class="fa-solid fa-save"></i> Lưu Thay Đổi</button>
+                    <button class="btn btn-danger" onclick="deleteEditedPrompt()"><i class="fa-solid fa-trash"></i> Xóa Prompt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Auto Pipeline -->
+    <div id="modalAuto" class="modal">
+        <div class="modal-content" style="padding: 25px; width: 900px; max-width: 95vw; max-height: 90vh; overflow-y: auto;">
+            <div class="flex justify-between items-center mb-20">
+                <h3 style="color:var(--primary); font-size: 1.5rem; margin:0"><i class="fa-solid fa-robot"></i> Trạm Điều Khiển Auto Dây Chuyền</h3>
+                <button class="btn btn-danger" onclick="document.getElementById('modalAuto').style.display='none'"><i class="fa-solid fa-xmark"></i> Đóng</button>
+            </div>
+            <p class="text-muted mb-20 text-sm">Hệ thống sẽ chạy song song đa luồng. Cứ 1 kịch bản ra lò sẽ được chuyển ngay sang Voice và Render mà không cần chờ. Thiết lập thông số tổng quát tại đây trước khi bắt đầu.</p>
+            
+            <div class="flex gap-20 mb-20">
+                <div style="flex: 1; display:flex; flex-direction:column; gap:15px">
+                    <div style="background:var(--bg-body); border:1px solid var(--border); padding:15px; border-radius:8px">
+                        <h4 class="text-primary mb-10"><i class="fa-solid fa-clapperboard"></i> 1. Kịch Bản & Số Lượng</h4>
+                        <div class="flex items-center gap-10 mb-10">
+                            <label class="text-main font-bold flex-1">Số Video Cần Tạo:</label>
+                            <input type="number" id="auto_count" class="form-control" value="5" min="1" style="width:80px; text-align:center">
+                        </div>
+                        <div class="flex items-center gap-10 mb-10">
+                            <label class="text-main font-bold flex-1">Thời lượng Kịch bản:</label>
+                            <select id="auto_scriptDur" class="form-control" style="width:100px"><option value="30s">30s</option><option value="60s" selected>60s</option></select>
+                        </div>
+                        <label class="text-muted text-sm">Prompt định hướng sáng tạo:</label>
+                        <select id="auto_promptSelect" class="form-control" style="margin-top:0">
+                            <option value="">-- Tự do sáng tạo --</option>
+                        </select>
+                    </div>
+
+                    <div style="background:var(--bg-body); border:1px solid var(--border); padding:15px; border-radius:8px">
+                        <h4 class="text-primary mb-10"><i class="fa-solid fa-microphone-lines"></i> 2. Cấu hình Giọng Đọc</h4>
+                        <label class="text-muted text-sm">Nguồn TTS:</label>
+                        <select id="auto_voiceProvider" class="form-control mb-10" onchange="toggleAutoVoiceUI()">
+                            <option value="larvoice">LarVoice (Mặc định)</option>
+                            <option value="everai">EverAI</option>
+                        </select>
+                        <select id="auto_voiceModelLar" class="form-control mb-10"><option value="">Đang tải giọng LarVoice...</option></select>
+                        <select id="auto_voiceModelEver" class="form-control mb-10" style="display:none">
+                            <option value="vi_female_kieunhi_mn">Kiều Nhi (Nữ - Miền Nam)</option>
+                            <option value="vi_male_lehoang_mb">Lê Hoàng (Nam - Miền Bắc)</option>
+                        </select>
+                        <div class="flex gap-10 mt-10">
+                            <div class="flex-1"><label class="text-muted text-xs">Speed:</label><input type="number" id="auto_vSpeed" class="form-control" value="1.1" step="0.1"></div>
+                            <div class="flex-1"><label class="text-muted text-xs">Pitch:</label><input type="number" id="auto_vPitch" class="form-control" value="1" step="0.1"></div>
+                            <div class="flex-1"><label class="text-muted text-xs">Vol:</label><input type="number" id="auto_vVol" class="form-control" value="0" step="0.1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="flex: 1; display:flex; flex-direction:column; gap:15px">
+                    <div style="background:var(--bg-body); border:1px solid var(--border); padding:15px; border-radius:8px">
+                        <h4 class="text-primary mb-10"><i class="fa-solid fa-language"></i> 3. Cấu hình Render & Sub</h4>
+                        
+                        <div class="flex gap-10 mb-10">
+                            <div class="flex-1">
+                                <label class="text-muted text-xs">Font chữ:</label>
+                                <input type="text" id="auto_subFont" class="form-control" list="sysFonts" value="Arial" placeholder="Gõ tên Font...">
+                            </div>
+                            <div style="width:60px"><label class="text-muted text-xs">Size:</label><input type="number" id="auto_subSize" class="form-control" value="24"></div>
+                        </div>
+                        
+                        <div class="flex gap-10 mb-10">
+                            <div class="flex-1"><label class="text-muted text-xs">Màu chữ:</label><input type="color" id="auto_subC" value="#FFFFFF" class="form-control" style="padding:0; height:32px; cursor:pointer"></div>
+                            <div class="flex-1"><label class="text-muted text-xs">Màu viền:</label><input type="color" id="auto_subB" value="#000000" class="form-control" style="padding:0; height:32px; cursor:pointer"></div>
+                            <div style="width:60px"><label class="text-muted text-xs">Cỡ viền:</label><input type="number" id="auto_subBorderSize" class="form-control" value="2" min="0" max="10"></div>
+                        </div>
+
+                        <label class="text-muted text-xs mb-5" style="display:block">Âm thanh Chuyển cảnh (Ting/Whoosh):</label>
+                        <div class="flex gap-10 mb-10">
+                            <input type="text" id="auto_soundEfPath" class="form-control flex-1" placeholder="Chưa chọn file..." readonly style="margin:0; font-size:11px">
+                            <button class="btn btn-secondary" onclick="chooseSoundFile('auto_soundEfPath')" style="padding:4px 8px; font-size:11px"><i class="fa-solid fa-music"></i></button>
+                        </div>
+
+                        <label class="text-muted text-xs mb-5" style="display:block">Âm thanh Keyword (Ting/Pop):</label>
+                        <div class="flex gap-10 mb-10">
+                            <input type="text" id="auto_keywordSoundPath" class="form-control flex-1" placeholder="Chưa chọn file..." readonly style="margin:0; font-size:11px">
+                            <button class="btn btn-secondary" onclick="chooseSoundFile('auto_keywordSoundPath')" style="padding:4px 8px; font-size:11px"><i class="fa-solid fa-music"></i></button>
+                        </div>
+                        
+                        <label class="flex items-center gap-10 p-10" style="cursor:pointer; background:rgba(245,158,11,0.1); border-radius:6px; border:1px solid rgba(245,158,11,0.2)">
+                            <input type="checkbox" id="auto_cbNoPunc" checked style="width:16px; height:16px; accent-color:var(--warning)"> 
+                            <span class="text-warning text-xs font-bold">Xóa Dấu Câu Subtitle</span>
+                        </label>
+                    </div>
+
+                    <div style="background:var(--bg-body); border:1px solid var(--border); padding:15px; border-radius:8px">
+                        <h4 class="text-primary mb-10"><i class="fa-solid fa-folder-tree"></i> 4. Xuất File & Luồng</h4>
+                        
+                        <div class="flex items-center justify-between mb-10">
+                            <label class="text-muted text-sm font-bold">Chế độ Render:</label>
+                            <select id="auto_renderEngine" class="form-control" style="width:140px; margin:0; font-weight:bold; color:var(--success)">
+                                <option value="gpu">🚀 Dùng GPU</option>
+                                <option value="cpu">🐌 Dùng CPU</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-10">
+                            <label class="text-muted text-sm font-bold">Song song (Concurrent):</label>
+                            <input type="number" id="auto_maxCon" class="form-control" value="3" min="1" max="5" style="width:70px; margin:0; text-align:center; font-weight:bold; color:var(--primary)">
+                        </div>
+
+                        <label class="text-muted text-xs mb-5" style="display:block">Lưu Video Thành Phẩm Tại:</label>
+                        <div class="flex gap-10">
+                            <input type="text" id="auto_outPath" class="form-control flex-1" placeholder="Mặc định: 07_Product" readonly style="margin:0; font-size:11px">
+                            <button class="btn btn-secondary" onclick="chooseOutputFolder('auto_outPath')" style="padding:4px 8px; font-size:11px"><i class="fa-solid fa-folder-open"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success w-full" onclick="runAutoPipelineMode()" style="padding:15px; font-size:1.2rem; box-shadow: 0 4px 20px rgba(16,185,129,0.4); text-transform:uppercase; letter-spacing:1px"><i class="fa-solid fa-rocket"></i> KHỞI ĐỘNG NHÀ MÁY SẢN XUẤT</button>
+        </div>
+    </div>
+
+    <div id="modalSettings" class="modal">
+        <div class="modal-content" style="padding: 25px; max-height:80vh; overflow-y:auto;">
+            <h3 class="mb-15" style="color:var(--primary); font-size: 1.3rem"><i class="fa-solid fa-gear"></i> Cấu hình API & Hệ thống</h3>
+            <label class="text-muted">Kie.ai API Key (Bắt buộc cho GPT-5-6-Luna):</label>
+            <input type="password" id="kAI" class="form-control mb-15" placeholder="Nhập key Kie.ai...">
+            <hr style="border:0; border-top:1px dashed var(--border-light); margin:15px 0">
+            <label class="text-primary font-bold"><i class="fa-solid fa-microphone"></i> Nền tảng Lồng Tiếng (TTS):</label>
+            <label class="text-muted text-sm mt-10">LarVoice Token:</label>
+            <input type="password" id="kLar" class="form-control mb-15" placeholder="Nhập key LarVoice...">
+            <label class="text-muted text-sm">EverAI Token:</label>
+            <input type="password" id="kEver" class="form-control mb-20" placeholder="Nhập key EverAI...">
+            
+            <hr style="border:0; border-top:1px dashed var(--border-light); margin:15px 0">
+            <label class="text-primary font-bold"><i class="fa-solid fa-folder-tree"></i> Vị trí lưu trữ Dữ liệu (Workspace):</label>
+            <div class="text-muted text-sm mt-5 mb-5">Đổi ổ đĩa khác nếu ổ C của bạn bị đầy.</div>
+            <div class="flex gap-10 mb-15">
+                <input type="text" id="workspacePathDisplay" class="form-control flex-1" readonly style="margin:0; font-size:12px; background: rgba(0,0,0,0.2)">
+                <button class="btn btn-secondary" onclick="changeWorkspacePath()" style="padding:6px 12px; font-size:12px"><i class="fa-solid fa-folder-open"></i> Đổi Ổ</button>
+            </div>
+            
+            <label class="flex items-center gap-10 mt-15 p-10" style="cursor:pointer; background:rgba(99,102,241,0.1); border-radius:6px; border:1px solid rgba(99,102,241,0.2)">
+                <input type="checkbox" id="cbUseProxy" style="width:16px; height:16px; accent-color:var(--primary)"> 
+                <span class="text-main font-bold">Tự động tạo Video Proxy (Nháp 480p) để xem mượt hơn trên máy yếu</span>
+            </label>
+            <button class="btn btn-warning w-full mt-10" onclick="clearAllProxies()"><i class="fa-solid fa-broom"></i> Xóa toàn bộ file Proxy giải phóng ổ đĩa</button>
+
+            <div class="flex gap-10 mt-20">
+                <button class="btn btn-primary flex-1" onclick="saveKeys()"><i class="fa-solid fa-save"></i> Lưu Lại</button>
+                <button class="btn" onclick="document.getElementById('modalSettings').style.display='none'">Đóng</button>
+            </div>
+            
+            <hr style="border:0; border-top:1px dashed var(--border-light); margin:15px 0">
+            <div class="flex justify-between items-center" style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border: 1px solid var(--danger);">
+                <div>
+                    <h4 class="text-danger" style="margin: 0 0 5px 0"><i class="fa-solid fa-trash-can"></i> Gỡ cài đặt phần mềm</h4>
+                    <span class="text-muted text-sm">Xóa phần mềm khỏi máy tính của bạn.</span>
+                </div>
+                <button class="btn btn-danger" onclick="uninstallApp()"><i class="fa-solid fa-skull"></i> Gỡ Cài Đặt</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVideoPlayer" class="modal">
+        <div class="modal-content" style="width: auto; background: transparent; border: none; box-shadow: none;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button class="btn btn-danger" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i> Đóng</button>
+            </div>
+            <video id="vidPlayer" controls style="max-height: 85vh; max-width: 90vw; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></video>
+        </div>
+    </div>
+
+    <div id="modalVideoEditor" class="modal">
+        <div class="modal-content modal-split" style="width: 1400px; max-width: 98vw; height: 85vh;">
+            <div class="modal-split-vid" style="flex: 1.2; position: relative;">
+                <div id="proxyBadge" style="position:absolute; top:10px; left:10px; background:var(--warning); color:#000; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:11px; z-index:10; display:none"><i class="fa-solid fa-bolt"></i> PROXY MODE</div>
+                <video id="vidPreview" controls style="width:100%; max-height:65vh; border-radius:8px;"></video>
+            </div>
+            <div class="modal-split-form flex flex-col" style="flex: 1; border-right: 1px solid var(--border);">
+                
+                <div class="flex justify-between items-center mb-15">
+                    <h3 id="vidTitle" style="color:var(--primary); margin:0; word-break: break-all; flex:1">Preview</h3>
+                    <span id="vidVerifyBadge" class="status-badge bg-success" style="display:none; margin-right:15px; background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success);"><i class="fa-solid fa-check-double"></i> Đã Duyệt</span>
+                    <div class="flex items-center gap-10" style="flex-shrink: 0; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 6px;">
+                        <button class="btn btn-secondary" id="btnPrevVideo" onclick="navigateVideo(-1)" style="padding: 4px 12px;" title="Video trước"><i class="fa-solid fa-chevron-left"></i></button>
+                        <span id="vidCounter" class="text-warning font-bold text-sm" style="min-width: 60px; text-align: center;">0 / 0</span>
+                        <button class="btn btn-secondary" id="btnNextVideo" onclick="navigateVideo(1)" style="padding: 4px 12px;" title="Video tiếp theo"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="vidFileName">
+                <div style="flex:1; overflow-y:auto; padding-right:5px; margin-bottom:15px; display:flex; flex-direction:column;">
+                    <label class="text-muted text-sm">Description (Mô tả):</label>
+                    <textarea id="vidDescription" class="form-control mb-10" rows="3" style="resize:vertical; font-size:13px; line-height:1.5"></textarea>
+                    
+                    <label class="text-muted text-sm">Action (Hành động):</label>
+                    <input type="text" id="vidAction" class="form-control mb-10" style="font-size:13px;">
+                    
+                    <label class="text-muted text-sm">Object (Vật thể):</label>
+                    <input type="text" id="vidObject" class="form-control mb-10" style="font-size:13px;">
+                    
+                    <label class="text-muted text-sm">Scene (Bối cảnh):</label>
+                    <input type="text" id="vidScene" class="form-control mb-10" style="font-size:13px;">
+                    
+                    <label class="text-muted text-sm">Camera (Góc quay):</label>
+                    <textarea id="vidCamera" class="form-control mb-10" rows="2" style="resize:vertical; font-size:13px;"></textarea>
+                    
+                    <label class="text-muted text-sm">Purpose (Mục đích ghép cảnh):</label>
+                    <textarea id="vidPurpose" class="form-control mb-10" rows="2" style="resize:vertical; font-size:13px;"></textarea>
+                    
+                    <label class="text-muted text-sm">Keyword (Từ khóa):</label>
+                    <input type="text" id="vidKeyword" class="form-control mb-10" style="font-size:13px;">
+                </div>
+                <div class="flex gap-10">
+                    <button class="btn btn-success flex-1" id="btnVerifyVidMeta" title="Lưu, đánh dấu Đã duyệt và chuyển video tiếp theo"><i class="fa-solid fa-check-double"></i> Duyệt & Next</button>
+                    <button class="btn btn-primary" id="btnSaveVidMeta" style="padding: 0 15px;" title="Chỉ lưu lại"><i class="fa-solid fa-save"></i> Lưu</button>
+                    <button class="btn" onclick="document.getElementById('modalVideoEditor').style.display='none'; document.getElementById('vidPreview').pause();">Đóng</button>
+                </div>
+            </div>
+            
+            <div class="modal-split-ai flex flex-col" style="flex: 1; padding: 25px; background: rgba(15,23,42,0.8);">
+                <h3 style="color:var(--success); font-size:1.1rem; margin-bottom:15px"><i class="fa-solid fa-code"></i> AI Raw JSON & Prompt</h3>
+                <textarea id="vidJsonData" class="form-control mb-15" rows="10" style="font-family:monospace; font-size:11px; flex:1" readonly></textarea>
+                <label class="text-muted text-sm">Lệnh chỉnh sửa cho AI:</label>
+                <textarea id="vidCorrectionPrompt" class="form-control mb-10" rows="3" placeholder="VD: Hãy sửa lại trường Purpose cho ngắn gọn hơn và tập trung vào tính năng làm sạch bàn phím..."></textarea>
+                <button class="btn btn-ai w-full" id="btnApplyCorrection" onclick="applyMetaCorrection()"><i class="fa-solid fa-wand-magic-sparkles"></i> Gửi lại AI Chỉnh Sửa</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalShotlist" class="modal">
+        <div class="modal-content modal-split" style="width: 1200px; max-width: 95vw; height: 85vh; padding: 0; background: var(--bg-body);">
+            
+            <div class="modal-split-vid flex flex-col" style="flex: 1.5; padding: 25px; border-right: 1px solid var(--border);">
+                <div class="flex justify-between items-center mb-15">
+                    <h3 class="text-primary" style="font-size: 1.5rem; margin:0"><i class="fa-solid fa-clapperboard"></i> Kế Hoạch Quay Phim</h3>
+                    <div class="flex gap-10">
+                        <button class="btn btn-secondary" onclick="callAIDirector(true)" title="Xóa bản nháp và bắt AI tính toán lại từ đầu"><i class="fa-solid fa-rotate-right"></i> Tạo Lại Từ Đầu</button>
+                        <button class="btn btn-primary" id="btnCopyShotlist" onclick="copyShotlist()"><i class="fa-solid fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+                <div id="shotlistStatus" class="text-muted text-sm mb-15">Đang chờ lệnh...</div>
+                <div id="shotlistArea" style="flex:1; overflow-y:auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px;">
+                </div>
+            </div>
+
+            <div class="modal-split-ai flex flex-col" style="flex: 1; padding: 25px; background: rgba(15,23,42,0.8);">
+                <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                    <button class="btn btn-danger" onclick="document.getElementById('modalShotlist').style.display='none'"><i class="fa-solid fa-xmark"></i> Đóng</button>
+                </div>
+                <h3 style="color:var(--warning); font-size:1.1rem; margin-bottom:15px"><i class="fa-solid fa-user-tie"></i> Chat "Sửa gáy" Đạo diễn</h3>
+                <p class="text-muted text-sm mb-15" style="line-height: 1.5">Bản nháp kế hoạch đã được lưu. Nếu sếp chưa ưng ý, hãy ra lệnh để AI điều chỉnh lại cấu trúc, thêm bớt phân cảnh đúng ý sếp.</p>
+                <textarea id="shotlistCorrectionPrompt" class="form-control flex-1 mb-15" style="resize:none" placeholder="VD: Hãy giảm bớt 5 cảnh quay đập hộp đi, thay vào đó bổ sung thêm 5 cảnh quay người dùng tương tác ngoài trời..."></textarea>
+                <button class="btn btn-ai w-full" id="btnApplyShotlistCorrection" onclick="applyShotlistCorrection()" style="padding: 12px; font-weight: bold; font-size: 1.1rem"><i class="fa-solid fa-wand-magic-sparkles"></i> Gửi Yêu Cầu Chỉnh Sửa</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TÍNH NĂNG ĐÃ FIX: NHÚNG LẠI MODAL TẠO DỰ ÁN MỚI -->
+    <div id="modalNewProject" class="modal" style="z-index: 1060;">
+        <div class="modal-content" style="width: 400px; border: 1px solid var(--border);">
+            <h3 class="text-primary mb-15"><i class="fa-solid fa-folder-plus"></i> Tạo Dự Án Mới</h3>
+            <label class="text-muted text-sm">Tên dự án (Không dấu, không khoảng trắng đặc biệt):</label>
+            <input type="text" id="newProjName" class="form-control mb-20" placeholder="VD: du_an_ban_phim_01">
+            <div class="flex gap-10">
+                <button class="btn btn-primary flex-1" onclick="submitNewProject()"><i class="fa-solid fa-check"></i> Tạo Mới</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('modalNewProject').style.display='none'">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
