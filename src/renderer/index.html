@@ -12,6 +12,14 @@
 </head>
 <body>
 <div id="app">
+
+    <!-- BẢNG THÔNG BÁO AUTO UPDATE -->
+    <div id="updateBanner" style="display:none; position:fixed; bottom:20px; right:20px; background:var(--bg-panel); border:2px solid var(--primary); padding:15px; border-radius:8px; z-index:99999; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: 320px;">
+        <div id="updateText" class="text-main font-bold mb-10 text-sm"><i class="fa-solid fa-cloud-arrow-down text-primary"></i> Đang tìm bản cập nhật...</div>
+        <div class="global-progress-bar mb-10"><div id="updateProgressFill" class="global-progress-fill" style="width:0%"></div></div>
+        <button id="btnRestartUpdate" class="btn btn-success w-full" style="display:none; font-weight:bold" onclick="window.api.restartToUpdate()"><i class="fa-solid fa-power-off"></i> Khởi động lại & Cập nhật ngay</button>
+    </div>
+
     <div id="view-home" class="active">
         <div class="flex items-center justify-between mb-20">
             <h2 style="font-size: 2.2rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800;"><i class="fa-solid fa-bolt"></i> AI VIDEO FACTORY PRO</h2>
@@ -159,9 +167,7 @@
                             </div>
 
                             <div id="q1-list" style="flex:1; overflow-y:auto; border-top: 1px dashed var(--border-light); padding: 15px;">
-                                <!-- Bảng AI Audit nằm ở đây -->
                                 <div id="resourceAuditPanel" class="mb-15" style="display:none"></div>
-                                
                                 <div id="sourceList"></div>
                             </div>
 
@@ -700,7 +706,6 @@
         </div>
     </div>
 
-    <!-- TÍNH NĂNG ĐÃ FIX: NHÚNG LẠI MODAL TẠO DỰ ÁN MỚI -->
     <div id="modalNewProject" class="modal" style="z-index: 1060;">
         <div class="modal-content" style="width: 400px; border: 1px solid var(--border);">
             <h3 class="text-primary mb-15"><i class="fa-solid fa-folder-plus"></i> Tạo Dự Án Mới</h3>

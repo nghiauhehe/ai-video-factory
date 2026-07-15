@@ -57,8 +57,6 @@ async function build() {
         let electronVer = (pkg.devDependencies && pkg.devDependencies.electron) || (pkg.dependencies && pkg.dependencies.electron) || "43.1.0";
         electronVer = electronVer.replace(/[\^~>=]/g, ''); 
         
-        // --- TẠO SCRIPT GỠ CÀI ĐẶT (NSIS MACRO) ---
-        // FIX: Đổi ROOT_DIR thành BUILD_DIR để Electron Builder tìm thấy file nsh khi build
         const buildResDir = path.join(BUILD_DIR, 'build');
         if (!fs.existsSync(buildResDir)) fs.mkdirSync(buildResDir);
         const nshContent = `
@@ -86,8 +84,13 @@ async function build() {
                 oneClick: false, 
                 allowToChangeInstallationDirectory: true,
                 createDesktopShortcut: true,
-                include: "build/installer.nsh" // Nhúng script NSIS vào đây
+                include: "build/installer.nsh"
             },
+            publish: [{
+                provider: "github",
+                owner: "nghiauhehe",
+                repo: "ai-video-factory"
+            }],
             asar: true, 
             asarUnpack: [
                 "node_modules/ffmpeg-static/**/*",

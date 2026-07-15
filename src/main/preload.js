@@ -30,7 +30,6 @@ contextBridge.exposeInMainWorld('api', {
     
     fixMetadata: (projectName, fileName, jsonStr, prompt, apiKey) => ipcRenderer.invoke('metadata:fix', projectName, fileName, jsonStr, prompt, apiKey),
     
-    // Nâng cấp: Truyền thêm prompt và oldData để chat với AI DOP
     generateShotlist: (projectName, apiKey, correctionPrompt, oldData) => ipcRenderer.invoke('ai:generateShotlist', projectName, apiKey, correctionPrompt, oldData),
 
     listPrompts: () => ipcRenderer.invoke('prompt:list'),
@@ -71,5 +70,11 @@ contextBridge.exposeInMainWorld('api', {
     on: (channel, callback) => ipcRenderer.on(channel, callback),
     
     stopProcess: () => ipcRenderer.invoke('process:stop'),
-    resetProcess: () => ipcRenderer.invoke('process:reset')
+    resetProcess: () => ipcRenderer.invoke('process:reset'),
+
+    // --- CÁC HÀM MỚI CHO TÍNH NĂNG AUTO UPDATE ---
+    onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+    onUpdateProgress: (callback) => ipcRenderer.on('update-progress', callback),
+    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
+    restartToUpdate: () => ipcRenderer.invoke('app:restartToUpdate')
 });

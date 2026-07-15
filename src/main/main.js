@@ -6,6 +6,7 @@ const os = require('os');
 const ffmpeg = require('fluent-ffmpeg'); 
 const ffmpegStatic = require('ffmpeg-static');
 const ffprobeStatic = require('ffprobe-static');
+const { autoUpdater } = require('electron-updater');
 
 ffmpeg.setFfmpegPath(ffmpegStatic.replace('app.asar', 'app.asar.unpacked'));
 ffmpeg.setFfprobePath(ffprobeStatic.path.replace('app.asar', 'app.asar.unpacked'));
@@ -30,11 +31,14 @@ const { generateEverAIVoice } = require('../services/everai');
 const { buildTimeline } = require('../local_core/metadata_matcher');
 const { renderFinalVideo } = require('../local_core/ffmpeg_render');
 
-// ĐÃ XÓA app.disableHardwareAcceleration(); ĐỂ MỞ KHÓA SỨC MẠNH GPU
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-zero-copy');
 
 let mainWindow;
+
+// CẤU HÌNH AUTO UPDATER
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -51,9 +55,32 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
+    
+    // Chỉ check Update khi phần mềm đã đóng gói thành file .EXE
+    if (app.isPackaged) {
+        autoUpdater.checkForUpdatesAndNotify().catch(err => {
+            console.log("Lỗi check update: " + err.message);
+        });
+    }
+
     app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+// Sự kiện báo về Giao diện khi tải Update
+autoUpdater.on('update-available', (info) => {
+    if(mainWindow) mainWindow.webContents.send('update-available', info);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+    if(mainWindow) mainWindow.webContents.send('update-progress', progressObj);
+});
+autoUpdater.on('update-downloaded', (info) => {
+    if(mainWindow) mainWindow.webContents.send('update-downloaded', info);
+});
+
+ipcMain.handle('app:restartToUpdate', () => {
+    autoUpdater.quitAndInstall();
+});
 
 const userDataPath = app.getPath('userData');
 const appSettingsPath = path.join(userDataPath, 'app_settings.json');
@@ -396,7 +423,6 @@ ipcMain.handle('ai:generateShotlist', async (e, projectName, apiKey, correctionP
         
         let systemPrompt = "";
 
-        // NẾU LÀ YÊU CẦU CHỈNH SỬA (CÓ PROMPT VÀ DATA CŨ)
         if (correctionPrompt && oldData) {
             systemPrompt = `Bạn là một Đạo diễn Hình ảnh (D.O.P). Bạn vừa lập ra một BẢN NHÁP KẾ HOẠCH QUAY PHIM cho dự án "${config.productName || "Không rõ"}".
 
@@ -419,7 +445,6 @@ TRẢ VỀ DUY NHẤT ĐỊNH DẠNG JSON SAU (KHÔNG KÈM MARKDOWN, KHÔNG GI�
   }
 ]`;
         } 
-        // NẾU LÀ YÊU CẦU TẠO MỚI TỪ ĐẦU
         else {
             const scripts = await listScripts(p);
             if (scripts.length === 0) return { success: false, error: "Chưa có kịch bản nào để AI phân tích." };
@@ -637,7 +662,6 @@ ipcMain.handle('pipeline:runAuto', async (e, n, aiConfig, voiceConfig, promptCon
 
         sendLog(`[Auto] Đang tư duy Kịch Bản số ${i+1}/${c}...`);
         try {
-            // ĐÃ TRUYỀN THÊM projPath VÀO ĐỂ AI LƯU LOG duplicate_debug.json
             const scriptResObj = await generateNewScripts(apiKey, currentPrompt, history, 1, productInfo, d, projPath); 
             const costText = await logApiUsage(n, 'kie', `Tạo Kịch Bản Auto ${i+1}`, scriptResObj.credits, scriptResObj.tokens);
 
@@ -717,7 +741,6 @@ ipcMain.handle('script:generateBatch', async (e, n, aiConfig, promptContent, c, 
             }
             
             try {
-                // ĐÃ TRUYỀN THÊM projPath VÀO ĐỂ AI LƯU LOG duplicate_debug.json
                 const resObj = await generateNewScripts(apiKey, currentPrompt, history, 1, productInfo, d, projPath); 
                 const costText = await logApiUsage(n, 'kie', 'Tạo Kịch Bản Thủ Công', resObj.credits, resObj.tokens);
 

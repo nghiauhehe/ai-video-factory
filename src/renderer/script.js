@@ -304,6 +304,26 @@ if (window.api) {
         if(document.getElementById('tab-finance').classList.contains('active')) loadFinanceData();
         if(document.getElementById('home-pane-dashboard').style.display === 'flex') loadGlobalDashboard();
     });
+
+    // --- LẮNG NGHE SỰ KIỆN AUTO UPDATE ---
+    if (window.api.onUpdateAvailable) {
+        window.api.onUpdateAvailable((event, info) => {
+            document.getElementById('updateBanner').style.display = 'block';
+            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Phát hiện bản mới (v${info.version}). Đang tải...`;
+        });
+        
+        window.api.onUpdateProgress((event, progressObj) => {
+            const pct = Math.round(progressObj.percent);
+            document.getElementById('updateProgressFill').style.width = `${pct}%`;
+            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Đang tải Cập nhật... ${pct}%`;
+        });
+        
+        window.api.onUpdateDownloaded((event, info) => {
+            document.getElementById('updateProgressFill').style.width = `100%`;
+            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-circle-check text-success"></i> Đã tải xong bản v${info.version}!`;
+            document.getElementById('btnRestartUpdate').style.display = 'block';
+        });
+    }
 }
 
 let currentBigInputId = "";
@@ -507,7 +527,6 @@ async function setRunningState(isRunning) {
         document.getElementById('headerProgressText').textContent = '0%';
         document.getElementById('headerProgressBlock').style.display = 'flex';
         
-        // Mở khóa UI - Không cấm người dùng tương tác nữa
         document.getElementById('btnAutoMode').disabled = true;
         document.getElementById('btnGenScriptBatch').disabled = true;
         document.getElementById('btnGenVoiceBatch').disabled = true;
@@ -1337,7 +1356,6 @@ async function loadHome() {
     });
 }
 
-// BỘ NHỚ ĐỆM KẾ HOẠCH D.O.P
 let hasCachedShotlist = false;
 let currentShotlistData = null;
 
