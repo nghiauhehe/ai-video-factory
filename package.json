@@ -1,6 +1,6 @@
 {
   "name": "ai-video-factory",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Tool Auto Edit",
   "main": "src/main/main.js",
   "scripts": {

@@ -309,13 +309,26 @@ if (window.api) {
     if (window.api.onUpdateAvailable) {
         window.api.onUpdateAvailable((event, info) => {
             document.getElementById('updateBanner').style.display = 'block';
-            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Phát hiện bản mới (v${info.version}). Đang tải...`;
+            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Phát hiện bản mới (v${info.version}). Đang tải ngầm...`;
         });
         
         window.api.onUpdateProgress((event, progressObj) => {
-            const pct = Math.round(progressObj.percent);
+            // Đề phòng thư viện trả sai tham số
+            let data = progressObj || event;
+            let pct = Math.round(data.percent || 0);
+            
+            // Tính số MB đang tải
+            let transferred = ((data.transferred || 0) / (1024 * 1024)).toFixed(1);
+            let total = ((data.total || 0) / (1024 * 1024)).toFixed(1);
+            
+            // Bắt lỗi nếu mạng không trả về dung lượng tổng
+            let textHienThi = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Đang tải Cập nhật... ${pct}%`;
+            if (total > 0) {
+                textHienThi = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Đang tải: ${pct}% (${transferred} MB / ${total} MB)`;
+            }
+
             document.getElementById('updateProgressFill').style.width = `${pct}%`;
-            document.getElementById('updateText').innerHTML = `<i class="fa-solid fa-cloud-arrow-down text-primary"></i> Đang tải Cập nhật... ${pct}%`;
+            document.getElementById('updateText').innerHTML = textHienThi;
         });
         
         window.api.onUpdateDownloaded((event, info) => {
@@ -1043,6 +1056,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('kLar').value = localStorage.getItem('larvoice_api_key') || "";
     document.getElementById('kEver').value = localStorage.getItem('everai_api_key') || "";
     document.getElementById('cbUseProxy').checked = localStorage.getItem('use_proxy') === 'true';
+
+    if (window.api && window.api.getVersion) {
+        window.api.getVersion().then(v => {
+            const el = document.getElementById('appVersionDisplay');
+            if (el) el.textContent = 'v' + v;
+        });
+    }
 
     if (window.api && window.api.getWorkspacePath) {
         window.api.getWorkspacePath().then(p => {

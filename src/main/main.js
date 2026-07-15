@@ -154,6 +154,8 @@ ipcMain.handle('api:getLogs', async () => { return await getApiLogs(WORKSPACE_PA
 ipcMain.handle('process:stop', () => { global.isProcessStopped = true; sendLog('Hệ thống đã nhận lệnh DỪNG từ người dùng!', 'warning'); return true; });
 ipcMain.handle('process:reset', () => { global.isProcessStopped = false; return true; });
 
+ipcMain.handle('app:getVersion', () => app.getVersion());
+
 ipcMain.handle('app:getWorkspacePath', () => WORKSPACE_PATH);
 ipcMain.handle('app:setWorkspacePath', async (e, newPath) => {
     if (!newPath) return { success: false };
