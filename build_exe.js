@@ -61,10 +61,10 @@ async function build() {
         if (!fs.existsSync(buildResDir)) fs.mkdirSync(buildResDir);
         const nshContent = `
 !macro customUnInstall
-  MessageBox MB_YESNO "Ban co muon XOA VINH VIEN toan bo Du lieu du an (Workspace) va Cai dat cua AI Video Factory khong?$\\r$\\n(Chon Yes neu muon don sach o dia, chon No de giu lai cho lan cai sau)" IDYES wipeData IDNO keepData
+  MessageBox MB_YESNO "Ban co muon XOA VINH VIEN toan bo Du lieu du an (Workspace) va Cai dat cua phan mem khong?$\\r$\\n(Chon Yes neu muon don sach o dia, chon No de giu lai cho lan cai sau)" IDYES wipeData IDNO keepData
   wipeData:
     RMDir /r "$DOCUMENTS\\AIVideoFactory_Workspace"
-    RMDir /r "$APPDATA\\AI Video Factory Pro"
+    RMDir /r "$APPDATA\\Tool Auto edit - By Nugroup"
   keepData:
 !macroend
 `;
@@ -72,7 +72,7 @@ async function build() {
 
         pkg.build = {
             appId: "com.aivideofactory.ultrapro",
-            productName: "AI Video Factory Pro",
+            productName: "Tool Auto edit - By Nugroup",
             electronVersion: electronVer,
             directories: {
                 output: "dist_exe"

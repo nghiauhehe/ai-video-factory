@@ -42,7 +42,7 @@ autoUpdater.autoInstallOnAppQuit = true;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1280, height: 800, title: "AI Video Factory - Ultra Pro",
+        width: 1280, height: 800, title: "Tool Auto edit - By Nugroup",
         webPreferences: { 
             nodeIntegration: false, 
             contextIsolation: true, 
@@ -137,7 +137,7 @@ async function logApiUsage(projectName, service, task, usage, tokens = 0) {
 
 ipcMain.handle('app:uninstall', () => {
     const appDir = path.dirname(process.execPath);
-    const uninstallerPath = path.join(appDir, 'Uninstall AI Video Factory Pro.exe');
+    const uninstallerPath = path.join(appDir, 'Uninstall Tool Auto edit - By Nugroup.exe');
 
     if (fsSync.existsSync(uninstallerPath)) {
         const { spawn } = require('child_process');

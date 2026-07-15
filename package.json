@@ -1,7 +1,7 @@
 {
   "name": "ai-video-factory",
-  "version": "1.0.0",
-  "description": "Desktop app for automated AI video generation",
+  "version": "1.0.2",
+  "description": "Tool Auto Edit",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron ."
